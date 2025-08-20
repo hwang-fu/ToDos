@@ -5,7 +5,7 @@ public class TodoItem
     public Guid Id { get; set; }
     public string Title { get; set; }
     public string? Description { get; set; }
-    private bool IsCompleted { get; set; }
+    public bool IsCompleted { get; set; }
     public DateTimeOffset? DueDate { get; set; }
     public DateTimeOffset? CompletedDate { get; set; }
     public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
