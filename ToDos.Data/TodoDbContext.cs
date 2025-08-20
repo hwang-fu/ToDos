@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ToDos.Data;
 
-class TodoDbContext : DbContext
+public class TodoDbContext : DbContext
 {
     public TodoDbContext(DbContextOptions<TodoDbContext> options) : base(options)
     {

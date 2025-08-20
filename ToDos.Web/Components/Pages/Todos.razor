@@ -1,0 +1,89 @@
+@page "/todos"
+@using ToDos.Data
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+
+<h1 class="mb-2">TODOs</h1>
+
+<div class="mb-3">
+    <input @bind="newTitle" placeholder="New task..." />
+    <button @onclick="Add">Add</button>
+</div>
+
+@if (items.Count == 0)
+{
+    <p>No Todos yet.</p>
+}
+else
+{
+    <ul>
+        @foreach (var item in items)
+        {
+            <li>
+                <input type="checkbox" checked="@item.IsCompleted" @onchange="() => Toggle(item)" />
+                <span class="@GetCSS(item)">@item.Title</span>
+                <small>@(item.DueDate is null ? "" : $" (due {item.DueDate:yyyy-MM-dd})")</small>
+                <button @onclick="() => Delete(item.Id)">Delete</button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+
+    private List<TodoItemDto> items = new();
+    private string newTitle = "";
+
+    protected override async Task OnInitializedAsync() => 
+        await Load();
+    
+    private async Task Load() => 
+        items = await HttpClient.GetFromJsonAsync<List<TodoItemDto>>("/api/todos") ?? new();
+
+    private async Task Add()
+    {
+        if (string.IsNullOrWhiteSpace(newTitle))
+        {
+            return;
+        }
+
+        var response = await HttpClient.PostAsJsonAsync(
+            "/api/todos", 
+            new TodoItemDto(
+                Guid.Empty, 
+                newTitle, 
+                false, 
+                null, 
+                DateTimeOffset.UtcNow, 
+                TodoPriority.Normal, 
+                null));
+        newTitle = "";
+        await Load();
+    }
+
+    private async Task Toggle(TodoItemDto item)
+    {
+        item = item with { IsCompleted = !item.IsCompleted };
+        await HttpClient.PutAsJsonAsync($"/api/todos/{item.Id}", item);
+        await Load();
+    }
+
+    private async Task Delete(Guid id)
+    {
+        await HttpClient.DeleteAsync($"/api/todos/{id}");
+        await Load();
+    }
+
+    private static string GetCSS(TodoItemDto item) => item.IsCompleted ? "line-through text-gray-500" : "";
+
+    public record TodoItemDto(
+        Guid Id, 
+        string Title, 
+        bool IsCompleted, 
+        DateTimeOffset? DueDate,
+        DateTimeOffset CreatedDate,
+        TodoPriority Priority,
+        string? Description
+    );
+
+}
