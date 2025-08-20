@@ -2,6 +2,7 @@
 @using ToDos.Data
 @rendermode InteractiveServer
 @inject HttpClient HttpClient
+@inject NavigationManager Nav
 
 <h1 class="mb-2">TODOs</h1>
 
@@ -34,8 +35,15 @@ else
     private List<TodoItemDto> items = new();
     private string newTitle = "";
 
-    protected override async Task OnInitializedAsync() => 
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpClient.BaseAddress is null)
+        {
+            HttpClient.BaseAddress = new Uri(Nav.BaseUri);
+        }
         await Load();
+    }
+
     
     private async Task Load() => 
         items = await HttpClient.GetFromJsonAsync<List<TodoItemDto>>("/api/todos") ?? new();
