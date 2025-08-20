@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using ToDos.Data;
@@ -14,6 +15,12 @@ builder.Services.AddDbContext<TodoDbContext>(options =>
 {
     var conn = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseSqlite(conn);
+});
+
+builder.Services.AddScoped(sp =>
+{
+    var nav = sp.GetRequiredService<NavigationManager>(); // resolved inside circuit scope
+    return new HttpClient { BaseAddress = new Uri(nav.BaseUri) }; // e.g., https://localhost:7142/
 });
 
 builder.Services.AddProblemDetails();
