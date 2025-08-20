@@ -1,0 +1,121 @@
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio Code
+.vscode/
+.history/
+*.code-workspace
+
+# Rider
+.idea/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+*.psmdcp
+.packages/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# Entity Framework
+*.jfm
+
+# Others
+_ReSharper*/
+*.resharper
+*.DotSettings.user
+*.vs/
+*.vscode/
+*.sln.iml
+
+# DotCover
+*.dotCover
+
+# StyleCop
+StyleCopReport.xml
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+
+# TFS
+$tf/
+
+# Microsoft Azure
+ecf/
+rcf/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Dotnet generated files
+*.dll
+*.exe
+*.app
+*.so
+*.dylib
+*.pdb
+*.cache
+*.config
+*.dbmdl
+*.bak
+*.log
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Dotnet tools
+.dotnet-tools/
+
+# Coverage
+*.coverage
+*.coveragexml
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# Rider and JetBrains IDEs
+.idea/
+*.sln.iml
+
+# ---> macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# macOS system files
+.DS_Store?
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
