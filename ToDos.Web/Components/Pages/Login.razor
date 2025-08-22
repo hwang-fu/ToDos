@@ -1,0 +1,102 @@
+@attribute [AllowAnonymous]
+@page "/login"
+@using ToDos.Web.Components.Auth
+@using static Microsoft.AspNetCore.WebUtilities.QueryHelpers
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+
+<h1>Login</h1>
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <p style="color:red">@_error</p>
+}
+
+<input @bind="_username" placeholder="Username (admin/alice)" />
+<input @bind="_password" placeholder="Password" type="password" />
+<label><input type="checkbox" @bind="_remember" /> Remember me</label>
+<button @onclick="DoLogin">Login</button>
+<p>Probe Count: @_count</p>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Congratulations! You're authorized to browser this page!</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>You need to <a href="/login">log in</a> to view tasks.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+<button class="btn btn-secondary btn-sm"
+        type="button"
+        @onclick="() => _count++"
+        @onclick:preventDefault
+        @onclick:stopPropagation>
+    ++
+</button>
+
+@code {
+    private string _username = "";
+    private string _password = "";
+    private bool _remember = false;
+    private string? _error;
+    int _count = 0;
+    private bool _busy = false;
+
+    // private async Task DoLogin()
+    // {
+    //     var resp = await Http.PostAsJsonAsync("/auth/login", new LoginRequest(username, password, remember));
+    //     Console.Error.WriteLine("DEBUG: BREAKPOINT-7");
+    //     if (resp.IsSuccessStatusCode)
+    //     {
+    //         Console.Error.WriteLine("DEBUG: BREAKPOINT-8");
+    //         Nav.NavigateTo("/todos", forceLoad: true);
+    //     }
+    //     else
+    //     {
+    //         Console.Error.WriteLine("DEBUG: BREAKPOINT-9");
+    //         error = "Invalid credentials.";
+    //     }
+    //     Console.Error.WriteLine("DEBUG: BREAKPOINT-10");
+    // }
+    private async Task DoLogin()
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        _busy = true; 
+        _error = null;
+        try
+        {
+            var client = HttpFactory.CreateClient("self");
+            var response = await client.PostAsJsonAsync("/auth/login", new LoginRequest(_username, _password, _remember));
+            if (response.IsSuccessStatusCode)
+            {
+                var query = ParseQuery(new Uri(Nav.Uri).Query);
+                var target = query.TryGetValue("ReturnUrl", out var v) ? v.ToString() : "/todos";
+                Nav.NavigateTo(target, forceLoad: true);
+            }
+            else
+            {
+                _error = await response.Content.ReadAsStringAsync();
+                if (string.IsNullOrWhiteSpace(_error))
+                {
+                    _error = "Invalid credentials.";
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false; 
+            StateHasChanged();
+        }
+    }
+}

@@ -3,13 +3,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ToDos.Data;
 
-public class TodoDbContext : DbContext
+public class ApplicationDbContext : DbContext
 {
-    public TodoDbContext(DbContextOptions<TodoDbContext> options) : base(options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
 
     public DbSet<TodoItem> ToDos => Set<TodoItem>();
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,6 +34,13 @@ public class TodoDbContext : DbContext
             e.Property(t => t.UpdatedDate).HasConversion(dtoToLong);
             
             e.HasIndex(t => new { t.IsCompleted, t.DueDate });
+        });
+        modelBuilder.Entity<ApplicationUser>(e =>
+        {
+            e.HasKey(u => u.Id);
+            e.HasIndex(u => u.Username).IsUnique();
+            e.Property(u => u.Username).HasMaxLength(255);
+            e.Property(u => u.Email).HasMaxLength(255);
         });
     }
 }

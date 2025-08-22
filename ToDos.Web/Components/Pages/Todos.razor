@@ -1,21 +1,30 @@
 @page "/todos"
+@attribute [Authorize] 
 @using ToDos.Data
 @rendermode InteractiveServer
-@inject HttpClient HttpClient
+@inject IHttpClientFactory HttpFactory
 @inject NavigationManager Nav
 
 <h1 class="display-6 mb-3 d-flex align-items-center gap-2">
   TODO Bingos
 </h1>
+<AuthorizeView>
+    <Authorized>
+        <p>Congratulations! You're authorized to browser this page!</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>You need to <a href="/login">log in</a> to view tasks.</p>
+    </NotAuthorized>
+</AuthorizeView>
 
 <!-- Progress Bar -->
-@if (items.Count > 0)
+@if (_items.Count > 0)
 {
-    var done = items.Count(i => i.IsCompleted);
-    var pct = (int)Math.Round(100.0 * done / items.Count);
+    var done = _items.Count(i => i.IsCompleted);
+    var pct = (int)Math.Round(100.0 * done / _items.Count);
     <div class="mb-3">
         <div class="d-flex justify-content-between small text-muted mb-1">
-            <span>@done / @items.Count completed</span>
+            <span>@done / @_items.Count completed</span>
             <span>@pct%</span>
         </div>
         <div class="progress"><div class="progress-bar" style="width:@pct%"></div></div>
@@ -28,15 +37,15 @@
     <div class="row g-2 align-items-end">
       <div class="col-12 col-md-6">
         <label class="form-label">Title</label>
-        <input class="form-control" @bind="newTitle" placeholder="What needs to be done?" />
+        <input class="form-control" @bind="_newTitle" placeholder="What needs to be done?" />
       </div>
       <div class="col-6 col-md-3">
         <label class="form-label">Due date</label>
-        <input class="form-control" type="date" @bind="newDueDate" />
+        <input class="form-control" type="date" @bind="_newDueDate" />
       </div>
       <div class="col-6 col-md-2">
         <label class="form-label">Priority</label>
-        <select class="form-select" @bind="newPriority">
+        <select class="form-select" @bind="_newPriority">
           <option value="@TodoPriority.Low">Low</option>
           <option value="@TodoPriority.Normal">Normal</option>
           <option value="@TodoPriority.High">High</option>
@@ -53,9 +62,9 @@
 <!-- Filters / actions -->
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
   <div class="btn-group" role="group">
-    <button class="btn btn-sm @(filter is Filter.All ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(Filter.All)">All</button>
-    <button class="btn btn-sm @(filter is Filter.Active ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(Filter.Active)">Active</button>
-    <button class="btn btn-sm @(filter is Filter.Completed ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(Filter.Completed)">Completed</button>
+    <button class="btn btn-sm @(_filter is Filter.All ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(Filter.All)">All</button>
+    <button class="btn btn-sm @(_filter is Filter.Active ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(Filter.Active)">Active</button>
+    <button class="btn btn-sm @(_filter is Filter.Completed ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(Filter.Completed)">Completed</button>
   </div>
   <div class="ms-auto d-flex gap-2">
     <button class="btn btn-sm btn-outline-secondary" @onclick="Load">↻ Refresh</button>
@@ -63,7 +72,7 @@
   </div>
 </div>
 
-@if (filtered.Count == 0)
+@if (_filtered.Count == 0)
 {
   <div class="text-center text-muted py-5">
     <div class="fs-4">No tiles yet.</div>
@@ -74,7 +83,7 @@ else
 {
   <!-- BINGO SHEET -->
   <div class="bingo-grid">
-      @foreach (var item in filtered)
+      @foreach (var item in _filtered)
       {
           var overdue = IsOverdue(item);
           <button class="bingo-tile @(item.IsCompleted ? "done" : "") @(overdue ? "overdue" : "")"
@@ -105,39 +114,41 @@ else
 }
 
 @code {
-    private List<TodoItemDto> items = new();
-    private List<TodoItemDto> filtered = new();
-    private string newTitle = "";
-    private DateTime? newDueDate;
-    private TodoPriority newPriority = TodoPriority.Normal;
+    private List<TodoItemDto> _items = new();
+    private List<TodoItemDto> _filtered = new();
+    private string _newTitle = "";
+    private DateTime? _newDueDate;
+    private TodoPriority _newPriority = TodoPriority.Normal;
+    private HttpClient HttpClient => HttpFactory.CreateClient("self");
 
     private enum Filter { All, Active, Completed }
-    private Filter filter = Filter.All;
+    private Filter _filter = Filter.All;
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpClient.BaseAddress is null)
-            HttpClient.BaseAddress = new Uri(Nav.BaseUri);
-
+        await base.OnInitializedAsync();
+        HttpClient.BaseAddress ??= new Uri(Nav.BaseUri);
         await Load();
     }
 
     private async Task Load()
     {
-        items = await HttpClient.GetFromJsonAsync<List<TodoItemDto>>("/api/todos") ?? new();
+        Console.Error.WriteLine("DEBUG: BREAKPOINT-11");
+        _items = await HttpClient.GetFromJsonAsync<List<TodoItemDto>>("/api/todos") ?? new();
+        Console.Error.WriteLine("DEBUG: BREAKPOINT-12");
         ApplyFilter();
     }
 
     private void ApplyFilter()
     {
-        IEnumerable<TodoItemDto> q = filter switch
+        IEnumerable<TodoItemDto> q = _filter switch
         {
-            Filter.Active    => items.Where(i => !i.IsCompleted),
-            Filter.Completed => items.Where(i =>  i.IsCompleted),
-            _                => items.AsEnumerable()
+            Filter.Active    => _items.Where(i => !i.IsCompleted),
+            Filter.Completed => _items.Where(i =>  i.IsCompleted),
+            _                => _items.AsEnumerable()
         };
 
-        filtered = q
+        _filtered = q
             .OrderBy(i => i.IsCompleted)                                // incomplete first
             .ThenBy(i => i.DueDate ?? DateTimeOffset.MaxValue)          // earliest due next
             .ThenByDescending(i => i.CreatedDate)                       // newest created last
@@ -148,39 +159,39 @@ else
 
     private void SetFilter(Filter f)
     {
-        filter = f;
+        _filter = f;
         ApplyFilter();
     }
 
     private async Task Add()
     {
-        if (string.IsNullOrWhiteSpace(newTitle))
+        if (string.IsNullOrWhiteSpace(_newTitle))
         {
             return;
         }
 
         DateTimeOffset? due = null;
-        if (newDueDate is not null)
+        if (_newDueDate is not null)
         {
-            due = new DateTimeOffset(newDueDate.Value);
+            due = new DateTimeOffset(_newDueDate.Value);
         }
 
         var create = new TodoItemDto(
             Guid.Empty,
-            newTitle.Trim(),
+            _newTitle.Trim(),
             false,
             due,
             DateTimeOffset.UtcNow,
-            newPriority,
+            _newPriority,
             null
         );
 
         var resp = await HttpClient.PostAsJsonAsync("/api/todos", create);
         if (resp.IsSuccessStatusCode)
         {
-            newTitle = "";
-            newDueDate = null;
-            newPriority = TodoPriority.Normal;
+            _newTitle = "";
+            _newDueDate = null;
+            _newPriority = TodoPriority.Normal;
             await Load();
         }
     }
@@ -200,7 +211,7 @@ else
 
     private async Task ClearCompleted()
     {
-        var completed = items.Where(i => i.IsCompleted).ToList();
+        var completed = _items.Where(i => i.IsCompleted).ToList();
         foreach (var it in completed)
             await HttpClient.DeleteAsync($"/api/todos/{it.Id}");
         await Load();
@@ -211,7 +222,6 @@ else
         TodoPriority.Urgent => "chip-urgent",
         TodoPriority.High   => "chip-high",
         TodoPriority.Normal => "chip-normal",
-        TodoPriority.Low    => "chip-low",
         _ => "chip-low"
     };
     
@@ -300,7 +310,7 @@ else
     padding: 3px 10px;
     border-radius: 0 10px 10px 0;
     box-shadow: 0 2px 6px rgba(180,35,24,.25);
-    letter-spacing: .5px;
+    /*letter-spacing: .5px;*/
 }
 
 /* Subtle overdue emphasis (kept minimal, no banner) */

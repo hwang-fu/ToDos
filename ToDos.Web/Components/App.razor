@@ -10,11 +10,13 @@
     <link rel="stylesheet" href="@Assets["ToDos.Web.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="InteractiveServer"/>
 </head>
 
 <body>
-    <Routes />
+    <CascadingAuthenticationState>
+        <Routes @rendermode="InteractiveServer"/>
+    </CascadingAuthenticationState>
     <script src="_framework/blazor.web.js"></script>
 </body>
 

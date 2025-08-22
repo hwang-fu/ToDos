@@ -1,0 +1,10 @@
+@attribute [AllowAnonymous]
+@page "/_probe"
+@rendermode InteractiveServer
+
+<h3>Probe</h3>
+<p>Count: @count</p>
+<button class="btn btn-primary" type="button" @onclick="() => count++"
+        @onclick:preventDefault @onclick:stopPropagation>++</button>
+
+@code { int count = 0; }
